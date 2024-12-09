@@ -67,8 +67,8 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 		}
 
 		company := "Нет компании"
-		if len(page.Properties.Company.Title) > 0 {
-			company = page.Properties.Company.Title[0].PlainText
+		if len(page.Properties.Company.RichText) > 0 {
+			company = page.Properties.Company.RichText[0].PlainText
 		}
 
 		stage := "Нет этапа"
@@ -77,8 +77,8 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 		}
 
 		creator := "Нет инициатора"
-		if len(page.Properties.Creator.RichText) > 0 {
-			creator = page.Properties.Creator.RichText[0].PlainText
+		if len(page.Properties.Telegram.RichText) > 0 {
+			creator = page.Properties.Telegram.RichText[0].PlainText
 		}
 
 		message += fmt.Sprintf("У %s, Компания: %s, Время: %s, Этап: %s\n", creator, company, dateTime.Format("15:04"), stage)
@@ -122,13 +122,13 @@ func (ts *TelegramService) NotifyUpcomingInterview(notionService *NotionService)
 
 	for _, page := range notionResponse.Results {
 		creator := "Нет инициатора"
-		if len(page.Properties.Creator.RichText) > 0 {
-			creator = page.Properties.Creator.RichText[0].PlainText
+		if len(page.Properties.Telegram.RichText) > 0 {
+			creator = page.Properties.Telegram.RichText[0].PlainText
 		}
 
 		company := "Нет компании"
-		if len(page.Properties.Company.Title) > 0 {
-			company = page.Properties.Company.Title[0].PlainText
+		if len(page.Properties.Company.RichText) > 0 {
+			company = page.Properties.Company.RichText[0].PlainText
 		}
 
 		stage := "Нет этапа"

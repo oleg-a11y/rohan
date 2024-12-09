@@ -9,11 +9,11 @@ type Page struct {
 }
 
 type Properties struct {
-	Company TitleProperty  `json:"Company"`
-	Date    DateProperty   `json:"Date"`
-	Stage   SelectProperty `json:"Stage"`
-	Salary  TextProperty   `json:"Salary"`
-	Creator TextProperty   `json:"Creator"`
+	Company  TextProperty   `json:"Company"`
+	Date     DateProperty   `json:"Date"`
+	Salary   TextProperty   `json:"Salary"`
+	Stage    SelectProperty `json:"Stage"`
+	Telegram TextProperty   `json:"Telegram"`
 }
 
 type TitleProperty struct {
