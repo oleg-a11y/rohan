@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/robfig/cron/v3"
 	"log"
+	"net/http"
 	"rohan/internal/handler"
 	"rohan/internal/service"
 )
@@ -35,6 +36,11 @@ func main() {
 	}
 
 	c.Start()
+	
+	err = http.ListenAndServe("0.0.0.0:8080", nil)
+	if err != nil {
+			log.Fatalf("Ошибка при запуске сервера: %v", err)
+	}
 
 	select {}
 }
