@@ -3,29 +3,11 @@ package main
 import (
 	"github.com/robfig/cron/v3"
 	"log"
-	"net/http"
-	"os"
 	"rohan/internal/handler"
 	"rohan/internal/service"
 )
 
 func main() {
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, World!"))
-	})
-
-	go func() {
-		if err := http.ListenAndServe(":"+port, nil); err != nil {
-			log.Fatalf("Ошибка при запуске сервера: %v", err)
-		}
-	}()
-
 	notionService := service.NewNotionService()
 	telegramService := service.NewTelegramService()
 	telegramHandler := handler.NewTelegramHandler(telegramService, notionService)
