@@ -42,12 +42,7 @@ func (ts *TelegramService) SendMessage(message string) error {
 }
 
 func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
-	loc, err := time.LoadLocation("Europe/Moscow")
-	if err != nil {
-		return err
-	}
-
-	now := time.Now().In(loc).Format("2006-01-02")
+	now := time.Now().Format("2006-01-02")
 	filter := map[string]interface{}{
 		"filter": map[string]interface{}{
 			"property": "Date",
@@ -86,7 +81,7 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 			creator = page.Properties.Telegram.RichText[0].PlainText
 		}
 
-		message += fmt.Sprintf("У %s, Компания: %s, Время: %s, Этап: %s\n", creator, company, dateTime.In(loc).Format("15:04"), stage) // Использование московского времени
+		message += fmt.Sprintf("У %s, Компания: %s, Время: %s, Этап: %s\n", creator, company, dateTime.Format("15:04"), stage)
 		hasInterviews = true
 	}
 
@@ -104,12 +99,7 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 }
 
 func (ts *TelegramService) NotifyUpcomingInterview(notionService *NotionService) error {
-	loc, err := time.LoadLocation("Europe/Moscow")
-	if err != nil {
-		return err
-	}
-
-	now := time.Now().In(loc)
+	now := time.Now()
 	currentTime := now.Truncate(time.Minute).Add(10 * time.Minute)
 
 	filter := map[string]interface{}{

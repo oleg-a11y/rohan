@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"rohan/internal/handler"
 	"rohan/internal/service"
-	"time"
 )
 
 func main() {
@@ -14,9 +13,9 @@ func main() {
 	telegramService := service.NewTelegramService()
 	telegramHandler := handler.NewTelegramHandler(telegramService, notionService)
 
-	c := cron.New(cron.WithLocation(time.FixedZone("MSK", 3*60*60)))
+	c := cron.New()
 
-	_, err := c.AddFunc("0 10 * * *", func() {
+	_, err := c.AddFunc("00 10 * * *", func() {
 		if err := telegramHandler.SendNotionData(); err != nil {
 			log.Printf("Ошибка при отправке данных: %v", err)
 		}
