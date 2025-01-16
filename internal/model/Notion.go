@@ -30,6 +30,7 @@ type DateProperty struct {
 
 type DateDetails struct {
 	Start string `json:"start"`
+	End   string `json:"end,omitempty"`
 }
 
 type SelectProperty struct {

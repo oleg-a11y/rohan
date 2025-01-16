@@ -4,11 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
-
-	"github.com/joho/godotenv"
 	"rohan/internal/model"
 )
 
@@ -17,15 +13,10 @@ type NotionService struct {
 	DatabaseId  string
 }
 
-func NewNotionService() *NotionService {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Ошибка загрузки .env файла")
-	}
-
+func NewNotionService(notionToken, databaseId string) *NotionService {
 	return &NotionService{
-		NotionToken: os.Getenv("NOTION_TOKEN"),
-		DatabaseId:  os.Getenv("DATABASE_ID"),
+		NotionToken: notionToken,
+		DatabaseId:  databaseId,
 	}
 }
 

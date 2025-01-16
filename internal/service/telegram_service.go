@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -15,11 +14,11 @@ type TelegramService struct {
 	BotThreadID string
 }
 
-func NewTelegramService() *TelegramService {
+func NewTelegramService(botToken, chatID, botThreadID string) *TelegramService {
 	return &TelegramService{
-		BotToken:    os.Getenv("BOT_TOKEN"),
-		ChatID:      os.Getenv("BOT_CHAT_ID"),
-		BotThreadID: os.Getenv("BOT_THREAD_ID"),
+		BotToken:    botToken,
+		ChatID:      chatID,
+		BotThreadID: botThreadID,
 	}
 }
 
@@ -60,6 +59,8 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 	var message string
 	var hasInterviews bool
 
+	message += "Cобеседования на сегодня:\n\n"
+
 	for _, page := range notionResponse.Results {
 		dateTime, err := time.Parse(time.RFC3339, page.Properties.Date.Date.Start)
 		if err != nil {
@@ -81,19 +82,19 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 			creator = page.Properties.Telegram.RichText[0].PlainText
 		}
 
-		message += fmt.Sprintf("У %s, Компания: %s, Время: %s, Этап: %s\n", creator, company, dateTime.Format("15:04"), stage)
+		message += fmt.Sprintf(
+			"%s\nКуда: %s\nКогда: %s\nКто: %s\n\n",
+			stage, company, dateTime.Format("15:04"), creator,
+		)
+
 		hasInterviews = true
 	}
 
 	if hasInterviews {
-		message = "Доброе время суток! На сегодня запланированы собеседования:\n" + message
-	} else {
-		message = "На сегодня запланированных собеседований нет."
-	}
-
-	err = ts.SendMessage(message)
-	if err != nil {
-		return err
+		err = ts.SendMessage(message)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -120,6 +121,8 @@ func (ts *TelegramService) NotifyUpcomingInterview(notionService *NotionService)
 		return nil
 	}
 
+	message := "Через 10 минут начнется собеседование:\n\n"
+
 	for _, page := range notionResponse.Results {
 		creator := "Нет инициатора"
 		if len(page.Properties.Telegram.RichText) > 0 {
@@ -136,11 +139,20 @@ func (ts *TelegramService) NotifyUpcomingInterview(notionService *NotionService)
 			stage = page.Properties.Stage.Select.Name
 		}
 
-		message := fmt.Sprintf("Уважаемый %s, у вас через 10 минут начнется собеседование в Компанию: %s, Этап: %s", creator, company, stage)
-		err = ts.SendMessage(message)
+		dateTime, err := time.Parse(time.RFC3339, page.Properties.Date.Date.Start)
 		if err != nil {
 			return err
 		}
+
+		message += fmt.Sprintf(
+			"%s\nКуда: %s\nКогда: %s\nКто: %s\n\n",
+			stage, company, dateTime.Format("15:04"), creator,
+		)
+	}
+
+	err = ts.SendMessage(message)
+	if err != nil {
+		return err
 	}
 
 	return nil

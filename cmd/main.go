@@ -1,21 +1,28 @@
 package main
 
 import (
-	"github.com/robfig/cron/v3"
 	"log"
 	"net/http"
+	"rohan/internal/config"
 	"rohan/internal/handler"
 	"rohan/internal/service"
+
+	"github.com/robfig/cron/v3"
 )
 
 func main() {
-	notionService := service.NewNotionService()
-	telegramService := service.NewTelegramService()
+	cfg, err := config.LoadConfig(".env")
+	if err != nil {
+		log.Fatalf("Ошибка при загрузке конфигурации: %v", err)
+	}
+
+	notionService := service.NewNotionService(cfg.NotionToken, cfg.DatabaseID)
+	telegramService := service.NewTelegramService(cfg.BotToken, cfg.BotChatID, cfg.BotThreadID)
 	telegramHandler := handler.NewTelegramHandler(telegramService, notionService)
 
 	c := cron.New()
 
-	_, err := c.AddFunc("00 10 * * *", func() {
+	_, err = c.AddFunc("49 12 * * *", func() {
 		if err := telegramHandler.SendNotionData(); err != nil {
 			log.Printf("Ошибка при отправке данных: %v", err)
 		}
