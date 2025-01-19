@@ -59,7 +59,7 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 	var message string
 	var hasInterviews bool
 
-	message += "Cобеседования на сегодня:\n\n"
+	message += "Cобеседования на сегодня\n\n"
 
 	for _, page := range notionResponse.Results {
 		dateTime, err := time.Parse(time.RFC3339, page.Properties.Date.Date.Start)
@@ -121,7 +121,7 @@ func (ts *TelegramService) NotifyUpcomingInterview(notionService *NotionService)
 		return nil
 	}
 
-	message := "Через 10 минут начнется собеседование:\n\n"
+	message := "Через 10 минут начнется собеседование\n\n"
 
 	for _, page := range notionResponse.Results {
 		creator := "Нет инициатора"

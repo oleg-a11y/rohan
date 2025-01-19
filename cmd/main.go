@@ -22,7 +22,7 @@ func main() {
 
 	c := cron.New()
 
-	_, err = c.AddFunc("49 12 * * *", func() {
+	_, err = c.AddFunc("34 14 * * *", func() {
 		if err := telegramHandler.SendNotionData(); err != nil {
 			log.Printf("Ошибка при отправке данных: %v", err)
 		}

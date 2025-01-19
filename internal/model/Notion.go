@@ -11,7 +11,6 @@ type Page struct {
 type Properties struct {
 	Company  TextProperty   `json:"Company"`
 	Date     DateProperty   `json:"Date"`
-	Salary   TextProperty   `json:"Salary"`
 	Stage    SelectProperty `json:"Stage"`
 	Telegram TextProperty   `json:"Telegram"`
 }
