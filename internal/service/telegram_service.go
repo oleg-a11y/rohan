@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -15,6 +16,7 @@ type TelegramService struct {
 }
 
 func NewTelegramService(botToken, chatID, botThreadID string) *TelegramService {
+	log.Println("Создание нового TelegramService")
 	return &TelegramService{
 		BotToken:    botToken,
 		ChatID:      chatID,
@@ -23,6 +25,7 @@ func NewTelegramService(botToken, chatID, botThreadID string) *TelegramService {
 }
 
 func (ts *TelegramService) SendMessage(message string) error {
+	log.Printf("Отправка сообщения в Telegram: %s", message)
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", ts.BotToken)
 	msg := map[string]interface{}{
 		"chat_id":           ts.ChatID,
@@ -33,10 +36,12 @@ func (ts *TelegramService) SendMessage(message string) error {
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(msgBytes))
 	if err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
 		return err
 	}
 	defer resp.Body.Close()
 
+	log.Println("Сообщение успешно отправлено")
 	return nil
 }
 
@@ -51,8 +56,10 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 		},
 	}
 
+	log.Printf("Отправка данных из Notion за дату: %s", now)
 	notionResponse, err := notionService.GetItemsWithFilter(filter)
 	if err != nil {
+		log.Printf("Ошибка при получении данных из Notion: %v", err)
 		return err
 	}
 
@@ -64,6 +71,7 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 	for _, page := range notionResponse.Results {
 		dateTime, err := time.Parse(time.RFC3339, page.Properties.Date.Date.Start)
 		if err != nil {
+			log.Printf("Ошибка при парсинге даты: %v", err)
 			return err
 		}
 
@@ -93,9 +101,11 @@ func (ts *TelegramService) SendNotionData(notionService *NotionService) error {
 	if hasInterviews {
 		err = ts.SendMessage(message)
 		if err != nil {
+			log.Printf("Ошибка при отправке сообщения: %v", err)
 			return err
 		}
 	}
+	log.Println("Данные из Notion успешно отправлены в Telegram")
 	return nil
 }
 
@@ -112,12 +122,15 @@ func (ts *TelegramService) NotifyUpcomingInterview(notionService *NotionService)
 		},
 	}
 
+	log.Printf("Проверка предстоящих собеседований на: %s", currentTime.Format(time.RFC3339))
 	notionResponse, err := notionService.GetItemsWithFilter(filter)
 	if err != nil {
+		log.Printf("Ошибка при получении данных из Notion: %v", err)
 		return err
 	}
 
 	if len(notionResponse.Results) == 0 {
+		log.Println("Нет предстоящих собеседований")
 		return nil
 	}
 
@@ -141,6 +154,7 @@ func (ts *TelegramService) NotifyUpcomingInterview(notionService *NotionService)
 
 		dateTime, err := time.Parse(time.RFC3339, page.Properties.Date.Date.Start)
 		if err != nil {
+			log.Printf("Ошибка при парсинге даты: %v", err)
 			return err
 		}
 
@@ -150,10 +164,13 @@ func (ts *TelegramService) NotifyUpcomingInterview(notionService *NotionService)
 		)
 	}
 
+	log.Printf("Отправка уведомления о собеседовании: %s", message)
 	err = ts.SendMessage(message)
 	if err != nil {
+		log.Printf("Ошибка при отправке уведомления: %v", err)
 		return err
 	}
 
+	log.Println("Уведомление о предстоящем собеседовании успешно отправлено")
 	return nil
 }

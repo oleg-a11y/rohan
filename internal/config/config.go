@@ -1,8 +1,10 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -14,10 +16,13 @@ type Config struct {
 }
 
 func LoadConfig(filePath string) (*Config, error) {
+	log.Printf("Загрузка конфигурации из файла: %s", filePath)
 	err := godotenv.Load(filePath)
 	if err != nil {
+		log.Printf("Ошибка при загрузке .env файла: %v", err)
 		return nil, err
 	}
+	log.Println("Файл .env загружен успешно")
 
 	return &Config{
 		NotionToken: os.Getenv("NOTION_TOKEN"),
