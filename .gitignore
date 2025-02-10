@@ -1,2 +1,12 @@
+# Ignore configuration files
 .env
+
+# Ignore compiled files and directories
 bin
+
+# Ignore IDE directories and files
+.vscode
+.idea
+
+# Ignore files log
+app.log

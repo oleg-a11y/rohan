@@ -1,58 +1,33 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"rohan/internal/config"
-	"rohan/internal/handler"
+	"rohan/internal/logger"
 	"rohan/internal/service"
-
-	"github.com/robfig/cron/v3"
 )
 
 func main() {
-	log.Println("Запуск приложения...")
-
-	cfg, err := config.LoadConfig(".env")
+	cfg := config.LoadConfig()
+	log, err := logger.NewLogger("app.log")
 	if err != nil {
-		log.Fatalf("Ошибка при загрузке конфигурации: %v", err)
+		fmt.Printf("Error creating logger: %v\n", err)
+		return
 	}
-	log.Println("Конфигурация загружена успешно")
+	defer log.Close()
 
-	notionService := service.NewNotionService(cfg.NotionToken, cfg.DatabaseID)
-	telegramService := service.NewTelegramService(cfg.BotToken, cfg.BotChatID, cfg.BotThreadID)
-	telegramHandler := handler.NewTelegramHandler(telegramService, notionService)
+	log.Info("Configuration loaded successfully")
 
-	c := cron.New()
+	notionService := service.NewNotionService(cfg, log)
+	telegramService := service.NewTelegramService(cfg, log)
 
-	_, err = c.AddFunc("34 14 * * *", func() {
-		log.Println("Запуск задачи SendNotionData")
-		if err := telegramHandler.SendNotionData(); err != nil {
-			log.Printf("Ошибка при отправке данных: %v", err)
-		}
-	})
+	cronService := service.NewCronService(notionService, telegramService, log)
+	cronService.Start()
 
-	if err != nil {
-		log.Fatalf("Ошибка при добавлении задачи в cron: %v", err)
-	}
-
-	_, err = c.AddFunc("* * * * *", func() {
-		log.Println("Запуск задачи NotifyUpcomingInterview")
-		if err := telegramHandler.NotifyUpcomingInterview(); err != nil {
-			log.Printf("Ошибка при отправке уведомления о собеседовании: %v", err)
-		}
-	})
-
-	if err != nil {
-		log.Fatalf("Ошибка при добавлении задачи в cron: %v", err)
-	}
-
-	c.Start()
-
-	log.Println("Сервер запущен на 0.0.0.0:8080")
-	err = http.ListenAndServe("0.0.0.0:8080", nil)
-	if err != nil {
-		log.Fatalf("Ошибка при запуске сервера: %v", err)
+	log.Info("Starting HTTP server on 0.0.0.0:8080")
+	if err := http.ListenAndServe("0.0.0.0:8080", nil); err != nil {
+		log.Error("Error starting HTTP server: " + err.Error())
 	}
 
 	select {}
