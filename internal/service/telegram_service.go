@@ -21,14 +21,20 @@ func NewTelegramService(cfg *config.Config, log *logger.Logger) *TelegramService
 func (t *TelegramService) SendInterviews(interviews []Interview, isTenMinutes bool) error {
 	var message strings.Builder
 
-	if isTenMinutes {
-		message.WriteString("Через 10 минут начнется собеседование\n\n")
+	if len(interviews) == 0 {
+		if !isTenMinutes {
+			message.WriteString("Список запланированных собеседований на сегодня на данный момент пуст\n")
+		}
 	} else {
-		message.WriteString("Cобеседования на сегодня\n\n")
-	}
+		if isTenMinutes {
+			message.WriteString("Через 10 минут начнется собеседование\n\n")
+		} else {
+			message.WriteString("Cобеседования на сегодня\n\n")
+		}
 
-	for _, interview := range interviews {
-		message.WriteString(fmt.Sprintf("%s\nКуда: %s\nКогда: %s\nКто: %s\n\n", interview.Stage, interview.Company, interview.Date, interview.Telegram))
+		for _, interview := range interviews {
+			message.WriteString(fmt.Sprintf("%s\nКуда: %s\nКогда: %s\nКто: %s\n\n", interview.Stage, interview.Company, interview.Date, interview.Telegram))
+		}
 	}
 
 	return t.sendMessage(message.String())
