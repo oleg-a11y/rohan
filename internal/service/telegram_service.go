@@ -27,13 +27,16 @@ func (t *TelegramService) SendInterviews(interviews []Interview, isTenMinutes bo
 		}
 	} else {
 		if isTenMinutes {
-			message.WriteString("Через 10 минут начнется собеседование\n\n")
+			message.WriteString("⏳ Через 10 минут начнется собеседование\n\n")
 		} else {
-			message.WriteString("Cобеседования на сегодня\n\n")
+			message.WriteString("📅 Собеседования на сегодня\n\n")
 		}
 
 		for _, interview := range interviews {
-			message.WriteString(fmt.Sprintf("%s\nКуда: %s\nКогда: %s\nКто: %s\n\n", interview.Stage, interview.Company, interview.Date, interview.Telegram))
+			message.WriteString(fmt.Sprintf(
+				"🕒 Время: %s\n🏢 Куда: %s\n📌 Этап: %s\n👤 Телеграм: %s\n🔗 Подробнее: [Открыть Notion](%s)\n\n",
+				interview.Date, interview.Company, interview.Stage, interview.Telegram, interview.URL,
+			))
 		}
 	}
 
@@ -45,6 +48,7 @@ func (t *TelegramService) sendMessage(message string) error {
 	data := url.Values{}
 	data.Set("chat_id", t.cfg.TelegramChatID)
 	data.Set("text", message)
+	data.Set("parse_mode", "Markdown")
 
 	if t.cfg.TelegramThreadID != "" {
 		data.Set("message_thread_id", t.cfg.TelegramThreadID)

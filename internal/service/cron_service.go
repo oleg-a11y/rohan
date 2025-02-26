@@ -27,7 +27,7 @@ func (c *CronService) Start() {
 
 func (c *CronService) scheduleDailyInterviews() {
 	cronJob := cron.New()
-	cronJob.AddFunc("30 9 * * *", func() {
+	cronJob.AddFunc("00 10 * * *", func() {
 		todayFilter := map[string]interface{}{
 			"property": "Дата",
 			"date": map[string]string{

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"rohan/internal/config"
 	"rohan/internal/logger"
+	"sort"
 	"time"
 )
 
@@ -21,20 +22,23 @@ func NewNotionService(cfg *config.Config, log *logger.Logger) *NotionService {
 }
 
 type Interview struct {
-	Telegram string `json:"Telegram"`
-	Date     string `json:"Date"`
-	Company  string `json:"Company"`
-	Stage    string `json:"Stage"`
+	Telegram  string `json:"Telegram"`
+	Date      string `json:"Date"`
+	Company   string `json:"Company"`
+	Stage     string `json:"Stage"`
+	Streaming bool   `json:"Streaming"`
+	URL       string `json:"URL"`
 }
 
 type NotionResponse struct {
 	Results []struct {
+		URL        string `json:"url"`
 		Properties struct {
 			Telegram struct {
 				RichText []struct {
 					PlainText string `json:"plain_text"`
 				} `json:"rich_text"`
-			} `json:"Tелеграм"`
+			} `json:"ТГ ваш"`
 			Date struct {
 				Date struct {
 					Start string `json:"start"`
@@ -50,6 +54,9 @@ type NotionResponse struct {
 					PlainText string `json:"plain_text"`
 				} `json:"title"`
 			} `json:"Этап"`
+			Streaming struct {
+				Checkbox bool `json:"checkbox"`
+			} `json:"Буду стримить"`
 		} `json:"properties"`
 	} `json:"results"`
 }
@@ -69,7 +76,7 @@ func (s *NotionService) fetchCompanyContent(companyID string) (string, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		s.log.Error("Error creating request: " + err.Error())
+		s.log.Error("Ошибка при создании запроса: " + err.Error())
 		return "", err
 	}
 
@@ -79,20 +86,20 @@ func (s *NotionService) fetchCompanyContent(companyID string) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		s.log.Error("Error executing request: " + err.Error())
+		s.log.Error("Ошибка при выполнении запроса: " + err.Error())
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		s.log.Error("Error reading response: " + err.Error())
+		s.log.Error("Ошибка при чтении ответа: " + err.Error())
 		return "", err
 	}
 
 	var pageResp NotionPageResponse
 	if err := json.Unmarshal(body, &pageResp); err != nil {
-		s.log.Error("Error decoding JSON: " + err.Error())
+		s.log.Error("Ошибка при разборе JSON: " + err.Error())
 		return "", err
 	}
 
@@ -112,13 +119,13 @@ func (s *NotionService) FetchInterviews(filter map[string]interface{}) ([]Interv
 
 	reqBodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
-		s.log.Error("Error encoding JSON: " + err.Error())
+		s.log.Error("Ошибка кодирования JSON: " + err.Error())
 		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(reqBodyBytes))
 	if err != nil {
-		s.log.Error("Error creating request: " + err.Error())
+		s.log.Error("Ошибка при создании запроса: " + err.Error())
 		return nil, err
 	}
 
@@ -129,20 +136,20 @@ func (s *NotionService) FetchInterviews(filter map[string]interface{}) ([]Interv
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		s.log.Error("Error executing request: " + err.Error())
+		s.log.Error("Ошибка при выполнении запроса: " + err.Error())
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		s.log.Error("Error reading response: " + err.Error())
+		s.log.Error("Ошибка при чтении ответа: " + err.Error())
 		return nil, err
 	}
 
 	var notionResp NotionResponse
 	if err := json.Unmarshal(body, &notionResp); err != nil {
-		s.log.Error("Error decoding JSON: " + err.Error())
+		s.log.Error("Ошибка при разборе JSON: " + err.Error())
 		return nil, err
 	}
 
@@ -151,13 +158,17 @@ func (s *NotionService) FetchInterviews(filter map[string]interface{}) ([]Interv
 		interview := Interview{}
 
 		if len(result.Properties.Telegram.RichText) > 0 {
-			interview.Telegram = result.Properties.Telegram.RichText[0].PlainText
+			telegram := result.Properties.Telegram.RichText[0].PlainText
+			if telegram != "" && telegram[0] != '@' {
+				telegram = "@" + telegram
+			}
+			interview.Telegram = telegram
 		}
 
 		rawDate := result.Properties.Date.Date.Start
 		parsedTime, err := time.Parse(time.RFC3339, rawDate)
 		if err != nil {
-			s.log.Error("Error parsing date: " + err.Error())
+			s.log.Error("Ошибка при разборе даты: " + err.Error())
 			continue
 		}
 		interview.Date = parsedTime.Format("15:04")
@@ -170,14 +181,29 @@ func (s *NotionService) FetchInterviews(filter map[string]interface{}) ([]Interv
 			companyID := result.Properties.Company.Relation[0].ID
 			companyContent, err := s.fetchCompanyContent(companyID)
 			if err != nil {
-				s.log.Error("Error fetching company: " + err.Error())
+				s.log.Error("Ошибка при получении компании: " + err.Error())
 				companyContent = ""
 			}
 			interview.Company = companyContent
 		}
 
+		if interview.Telegram == "" || interview.Date == "" || interview.Company == "" || interview.Stage == "" {
+			continue
+		}
+
+		if !result.Properties.Streaming.Checkbox {
+			continue
+		}
+
+		interview.URL = result.URL
+
+		interview.Streaming = true
 		interviews = append(interviews, interview)
 	}
+
+	sort.Slice(interviews, func(i, j int) bool {
+		return interviews[i].Date < interviews[j].Date
+	})
 
 	return interviews, nil
 }
