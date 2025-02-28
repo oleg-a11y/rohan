@@ -35,7 +35,11 @@ func (t *TelegramService) SendInterviews(interviews []Interview, isTenMinutes bo
 		for _, interview := range interviews {
 			message.WriteString(fmt.Sprintf(
 				"🕒 Время: %s\n🏢 Куда: %s\n📌 Этап: %s\n👤 Телеграм: %s\n🔗 Подробнее: [Открыть Notion](%s)\n\n",
-				interview.Date, interview.Company, interview.Stage, interview.Telegram, interview.URL,
+				escapeMarkdownV2(interview.Date),
+				escapeMarkdownV2(interview.Company),
+				escapeMarkdownV2(interview.Stage),
+				escapeMarkdownV2(interview.Telegram),
+				interview.URL,
 			))
 		}
 	}
@@ -48,7 +52,7 @@ func (t *TelegramService) sendMessage(message string) error {
 	data := url.Values{}
 	data.Set("chat_id", t.cfg.TelegramChatID)
 	data.Set("text", message)
-	data.Set("parse_mode", "Markdown")
+	data.Set("parse_mode", "MarkdownV2")
 
 	if t.cfg.TelegramThreadID != "" {
 		data.Set("message_thread_id", t.cfg.TelegramThreadID)
@@ -66,4 +70,12 @@ func (t *TelegramService) sendMessage(message string) error {
 	}
 
 	return nil
+}
+
+func escapeMarkdownV2(text string) string {
+	charsToEscape := "_*[]()~`>#+-=|{}.!"
+	for _, char := range charsToEscape {
+		text = strings.ReplaceAll(text, string(char), "\\"+string(char))
+	}
+	return text
 }
